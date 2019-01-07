@@ -14,12 +14,9 @@ import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IPathEditorInput;
-import org.eclipse.ui.IStorageEditorInput;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.MultiPageEditorPart;
 import org.eclipse.ui.texteditor.AbstractTextEditor;
-import org.eclipse.ui.texteditor.DocumentProviderRegistry;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.eclipse.ui.texteditor.ITextEditor;
 
@@ -49,11 +46,12 @@ public class EclipseEmmetHelper {
 	 * @return
 	 */
 	public static IEditorPart getTextEditor(IEditorPart editor) {
-		if (editor instanceof MultiPageEditorPart && ((MultiPageEditorPart) editor).getSelectedPage() instanceof IEditorPart) {
-			IEditorPart currentPage = (IEditorPart) ((MultiPageEditorPart) editor).getSelectedPage();
+		// PATCHED by OL: Account for the fact that the selected page might not be an IEditorPart 
+		if (editor instanceof MultiPageEditorPart) {
+			Object currentPage = ((MultiPageEditorPart) editor).getSelectedPage();
 
 			if (currentPage instanceof ITextEditor) {
-				editor = (ITextEditor) currentPage;
+				editor = (IEditorPart) currentPage;
 			} else {
 				ITextEditor adapter = (ITextEditor) ((MultiPageEditorPart) editor).getAdapter(ITextEditor.class);
 				if (adapter != null) {
@@ -77,9 +75,6 @@ public class EclipseEmmetHelper {
 			if (editor instanceof ITextEditor)
 				dp = ((ITextEditor) editor).getDocumentProvider();
 			
-			if (dp == null)
-				dp = DocumentProviderRegistry.getDefault().getDocumentProvider(editor.getEditorInput());
-			
 			if (dp != null)
 				return (IDocument) dp.getDocument(editor.getEditorInput());
 		}
@@ -96,7 +91,7 @@ public class EclipseEmmetHelper {
 			try {
 				svField = AbstractTextEditor.class.getDeclaredField("fSourceViewer");
 				svField.setAccessible(true);
-				viewer = (ITextViewer) svField.get((AbstractTextEditor) editor);
+				viewer = (ITextViewer) svField.get(editor);
 			} catch (Exception e) {	}
 		}
 		
@@ -153,20 +148,7 @@ public class EclipseEmmetHelper {
 	 */
 	public static String getPathFromEditorInput(IEditorInput input) {
 		try {
-			if (input instanceof FileEditorInput) {
-				IFile file = ((FileEditorInput) input).getFile();
-				return getStringOfIFileLocation(file);
-			} else if (input instanceof IStorageEditorInput) {
-				IStorageEditorInput sei = (IStorageEditorInput) input;
-				try {
-					return sei.getStorage().getFullPath().toOSString();
-				} catch (Exception e) {
-					if (input instanceof IPathEditorInput) {
-						IPathEditorInput pin = (IPathEditorInput) input;
-						return pin.getPath().toOSString();
-					}
-				}
-			} else if (input instanceof IPathEditorInput) {
+			if (input instanceof IPathEditorInput) {
 				IPathEditorInput pin = (IPathEditorInput) input;
 				return pin.getPath().toOSString();
 			}

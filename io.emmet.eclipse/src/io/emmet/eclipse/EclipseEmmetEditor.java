@@ -34,7 +34,7 @@ public class EclipseEmmetEditor implements IEmmetEditor {
 
 	private IEditorPart editor;
 	private IDocument doc;
-	private String caretPlaceholder = "${0}";
+	private final String caretPlaceholder = "${0}";
 	
 	private static Pattern whitespaceBegin = Pattern.compile("^(\\s+)");
 	
@@ -272,7 +272,7 @@ public class EclipseEmmetEditor implements IEmmetEditor {
 
 	@Override
 	public String getContent() {
-		return doc.get();
+		return doc.get() + getNewline(); // PATCHED by OL: Add a dummy newline to prevent "index out of bounds" (see SHARED-25609)
 	}
 
 	@Override
